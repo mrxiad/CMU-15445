@@ -66,5 +66,4 @@ template void TrieStore::Put(std::string_view key, Integer value);
 
 template auto TrieStore::Get(std::string_view key) -> std::optional<ValueGuard<MoveBlocked>>;
 template void TrieStore::Put(std::string_view key, MoveBlocked value);
-
 }  // namespace bustub

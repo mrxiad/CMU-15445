@@ -47,12 +47,12 @@ void PutCycle(const std::shared_ptr<bustub::TrieNode> &new_root, std::string_vie
   for (auto &pair : new_root->children_) {
     if (key.at(0) == pair.first) {
       flag = true;
-      if (key.size() > 1) {  //继续递归
+      if (key.size() > 1) {  // 继续递归
         std::shared_ptr<TrieNode> ptr = pair.second->Clone();
         PutCycle<T>(ptr, key.substr(1), std::move(value));
         pair.second = std::shared_ptr<const TrieNode>(ptr);
       } else {
-        //插入值
+        // 插入值
         std::shared_ptr<T> val_p = std::make_shared<T>(std::move(value));
         TrieNodeWithValue node_with_val(pair.second->children_, val_p);
         pair.second = std::make_shared<const TrieNodeWithValue<T>>(node_with_val);
