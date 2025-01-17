@@ -26,13 +26,56 @@ namespace bustub {
 enum class AccessType { Unknown = 0, Lookup, Scan, Index };
 
 class LRUKNode {
+ public:
+  LRUKNode() = default;
+  LRUKNode(size_t id, size_t k) : k_(k), fid_(id) {}
+  auto GetEvictable() -> bool { return is_evictable_; }
+  void SetEvictable(bool evictable) { is_evictable_ = evictable; }
+  auto GetHistory() { return history_; }
+  void AddHistory(size_t timestamp) { history_.push_front(timestamp); }  // 添加访问历史
+  void RemoveHistory() {                                                 // 清空访问历史
+    while (!history_.empty()) {
+      history_.pop_back();
+    }
+  }
+  auto GetFid() { return fid_; }
+  void SetK(size_t k) { k_ = k; }
+  auto GetKDistance(size_t cur) -> uint64_t {  // 计算k距离
+    // 如果一个帧的历史访问次数少于k次，则将其后向k距离设置为正无穷大（+inf）
+    if (history_.size() < k_) {
+      return UINT32_MAX;
+    }
+    // 获取k次前访问的时间戳
+    size_t k_distance;
+    auto it = history_.begin();
+    std::advance(it, k_ - 1);
+    k_distance = *it;
+    return cur - k_distance;
+  }
+  auto GetLastAccess() -> size_t {  // 获取最近一次访问的时间戳
+    if (history_.empty()) {
+      return UINT32_MAX;
+    }
+    return history_.front();
+  }
+  auto GetBackAccess() -> size_t {  // 获取最早一次访问的时间戳
+    if (history_.empty()) {
+      return UINT32_MAX;
+    }
+    return history_.back();
+  }
+
  private:
   /** History of last seen K timestamps of this page. Least recent timestamp stored in front. */
   // Remove maybe_unused if you start using them. Feel free to change the member variables as you want.
 
+  // 访问历史——时间戳链表，最近的访问时间戳在头部
   [[maybe_unused]] std::list<size_t> history_;
+  // k距离
   [[maybe_unused]] size_t k_;
+  // 帧id
   [[maybe_unused]] frame_id_t fid_;
+  // 是否可驱逐
   [[maybe_unused]] bool is_evictable_{false};
 };
 
@@ -150,12 +193,12 @@ class LRUKReplacer {
  private:
   // TODO(student): implement me! You can replace these member variables as you like.
   // Remove maybe_unused if you start using them.
-  [[maybe_unused]] std::unordered_map<frame_id_t, LRUKNode> node_store_;
-  [[maybe_unused]] size_t current_timestamp_{0};
-  [[maybe_unused]] size_t curr_size_{0};
-  [[maybe_unused]] size_t replacer_size_;
-  [[maybe_unused]] size_t k_;
-  [[maybe_unused]] std::mutex latch_;
+  std::unordered_map<frame_id_t, LRUKNode> node_store_;  // 存放所有的页面
+  size_t current_timestamp_{0};                          // 当前时间戳，每次访问都会+1
+  size_t curr_size_{0};                                  // 当前存放的可驱逐页面数量
+  size_t replacer_size_;                                 // 总共可以存放的页面数量
+  size_t k_;                                             // LRU-k中的k
+  std::mutex latch_;                                     // 互斥锁
 };
 
 }  // namespace bustub

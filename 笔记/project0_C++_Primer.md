@@ -977,7 +977,171 @@ auto Case3CorrectAnswer() -> int {
 
 
 
-## 类【todo】
+## 类
+
+### string_expression.h
+
+```cpp
+//===----------------------------------------------------------------------===//
+//
+//                         BusTub
+//
+// string_expression.h
+//
+// Identification: src/include/expression/string_expression.h
+//
+// Copyright (c) 2015-2023, Carnegie Mellon University Database Group
+//
+//===----------------------------------------------------------------------===//
+
+#pragma once
+
+#include <algorithm>
+#include <cctype>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "catalog/schema.h"
+#include "common/exception.h"
+#include "common/macros.h"
+#include "execution/expressions/abstract_expression.h"
+#include "fmt/format.h"
+#include "storage/table/tuple.h"
+#include "type/type.h"
+#include "type/type_id.h"
+#include "type/value_factory.h"
+
+namespace bustub {
+
+enum class StringExpressionType { Lower, Upper };
+
+/**
+ * StringExpression represents two expressions being computed.
+ */
+class StringExpression : public AbstractExpression {
+ public:
+  StringExpression(AbstractExpressionRef arg, StringExpressionType expr_type)
+      : AbstractExpression({std::move(arg)}, Column{"<val>", TypeId::VARCHAR, 256 /* hardcode max length */}),
+        expr_type_{expr_type} {
+    if (GetChildAt(0)->GetReturnType().GetType() != TypeId::VARCHAR) {
+      BUSTUB_ENSURE(GetChildAt(0)->GetReturnType().GetType() == TypeId::VARCHAR, "unexpected arg");
+    }
+  }
+
+  auto Compute(const std::string &val) const -> std::string {
+    // TODO(student): implement upper / lower.
+    std::string res;
+    // 只变化大小写，不变化其他字符
+    for (auto c : val) {
+      // 不是字母不管
+      if (std::isalpha(c) == 0) {
+        res += c;
+        continue;
+      }
+      // 转换大小写
+      if (expr_type_ == StringExpressionType::Upper) {
+        res += std::toupper(c);
+      } else {
+        res += std::tolower(c);
+      }
+    }
+    return res;
+  }
+
+  auto Evaluate(const Tuple *tuple, const Schema &schema) const -> Value override {
+    Value val = GetChildAt(0)->Evaluate(tuple, schema);
+    auto str = val.GetAs<char *>();
+    return ValueFactory::GetVarcharValue(Compute(str));
+  }
+
+  auto EvaluateJoin(const Tuple *left_tuple, const Schema &left_schema, const Tuple *right_tuple,
+                    const Schema &right_schema) const -> Value override {
+    Value val = GetChildAt(0)->EvaluateJoin(left_tuple, left_schema, right_tuple, right_schema);
+    auto str = val.GetAs<char *>();
+    return ValueFactory::GetVarcharValue(Compute(str));
+  }
+
+  /** @return the string representation of the expression node and its children */
+  auto ToString() const -> std::string override { return fmt::format("{}({})", expr_type_, *GetChildAt(0)); }
+
+  BUSTUB_EXPR_CLONE_WITH_CHILDREN(StringExpression);
+
+  StringExpressionType expr_type_;
+
+ private:
+};
+}  // namespace bustub
+
+template <>
+struct fmt::formatter<bustub::StringExpressionType> : formatter<string_view> {
+  template <typename FormatContext>
+  auto format(bustub::StringExpressionType c, FormatContext &ctx) const {
+    string_view name;
+    switch (c) {
+      case bustub::StringExpressionType::Upper:
+        name = "upper";
+        break;
+      case bustub::StringExpressionType::Lower:
+        name = "lower";
+        break;
+      default:
+        name = "Unknown";
+        break;
+    }
+    return formatter<string_view>::format(name, ctx);
+  }
+};
+```
+
+
+
+### string_expression.cpp
+
+```cpp
+#include <memory>
+#include <tuple>
+#include "binder/bound_expression.h"
+#include "binder/bound_statement.h"
+#include "binder/expressions/bound_agg_call.h"
+#include "binder/expressions/bound_alias.h"
+#include "binder/expressions/bound_binary_op.h"
+#include "binder/expressions/bound_column_ref.h"
+#include "binder/expressions/bound_constant.h"
+#include "binder/expressions/bound_func_call.h"
+#include "binder/expressions/bound_unary_op.h"
+#include "binder/statement/select_statement.h"
+#include "common/exception.h"
+#include "common/macros.h"
+#include "common/util/string_util.h"
+#include "execution/expressions/abstract_expression.h"
+#include "execution/expressions/column_value_expression.h"
+#include "execution/expressions/constant_value_expression.h"
+#include "execution/expressions/string_expression.h"
+#include "execution/plans/abstract_plan.h"
+#include "fmt/format.h"
+#include "planner/planner.h"
+
+namespace bustub {
+
+// NOLINTNEXTLINE
+auto Planner::GetFuncCallFromFactory(const std::string &func_name, std::vector<AbstractExpressionRef> args)
+    -> AbstractExpressionRef {
+  // 1. check if the parsed function name is "lower" or "upper".
+  // 2. verify the number of args (should be 1), refer to the test cases for when you should throw an `Exception`.
+  // 3. return a `StringExpression` std::shared_ptr.
+  if (func_name == "lower" || func_name == "upper") {
+    if (args.size() != 1) {
+      throw Exception("lower/upper function should have 1 argument");
+    }
+    return std::make_shared<StringExpression>(
+        args[0], func_name == "lower" ? StringExpressionType::Lower : StringExpressionType::Upper);
+  }
+  throw Exception("unsupported function");
+}
+
+}  // namespace bustub
+```
 
 
 
@@ -1009,4 +1173,17 @@ make -j`nproc` sqllogictest
 
 
 
-# 格式化【todo】
+# 格式化检查
+
+```bash
+cd build
+make format
+make check-lint
+make check-clang-tidy-p0
+```
+
+
+
+
+
+# 线上提交【todo】
