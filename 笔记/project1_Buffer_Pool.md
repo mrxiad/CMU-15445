@@ -32,6 +32,7 @@ https://blog.csdn.net/zhanglong_4444/article/details/88344953
 
 
 LRU-K实现: 
+
 1. 数据第一次被访问，加入到访问历史列表；
 
 2. 如果数据在访问历史列表里后没有达到K次访问，则按照一定规则（FIFO，LRU）淘汰；
@@ -1005,6 +1006,20 @@ auto BufferPoolManager::NewPageGuarded(page_id_t *page_id) -> BasicPageGuard { r
 
 
 
+
+
+## 测试
+
+```bash
+cd build
+make buffer_pool_manager_test  -j$(nproc)
+./test/buffer_pool_manager_test
+```
+
+
+
+# 其他
+
 ## Page 的主要参数及作用
 
 在 BusTub 项目中，Page 类（定义在 `storage/page/page.h` 中）通常包含以下几个重要成员变量（在代码中以 `page->xxx` 调用）：
@@ -1045,20 +1060,6 @@ auto BufferPoolManager::NewPageGuarded(page_id_t *page_id) -> BasicPageGuard { r
    - **作用**：
      重置页面内存，为新页面准备干净的内存区域。
      在创建新页面（NewPage）后调用该方法清空旧数据，防止出现脏数据遗留问题。
-
-
-
-## 测试
-
-```bash
-cd build
-make buffer_pool_manager_test  -j$(nproc)
-./test/buffer_pool_manager_test
-```
-
-
-
-## 其他
 
 ### 1. 固定 Pin 与解除固定 Unpin
 
