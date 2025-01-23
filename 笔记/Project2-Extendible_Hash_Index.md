@@ -433,6 +433,7 @@ make page_guard_test  -j$(nproc)
 # 任务 #2 - 可扩展哈希表页面
 
 讲解：https://www.cnblogs.com/wevolf/p/18302985
+详解：https://zhuanlan.zhihu.com/p/569306929
 
 您必须实现三个 Page 类来存储可扩展哈希表的数据。
 
